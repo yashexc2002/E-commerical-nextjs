@@ -20,7 +20,9 @@ const Register = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Registration Successful! Please check your email for the Welcome OTP.');
+        alert(data.emailSent
+          ? 'Registration successful! Please check your email for the Welcome OTP.'
+          : 'Registration successful, but the welcome email could not be sent. Please contact support.');
         login(data);
         navigate('/');
       } else {

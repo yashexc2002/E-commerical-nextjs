@@ -30,18 +30,28 @@ const registerUser = async (req, res) => {
         <p>Your one-time verification/discount OTP is: <strong>${otp}</strong></p>
       `;
 
-      await sendEmail({
-        email: user.email,
-        subject: 'Welcome to Shopvilla - Your OTP',
-        message
-      });
+      let emailSent = true;
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: 'Welcome to Shopvilla - Your OTP',
+          message
+        });
+      } catch (emailError) {
+        emailSent = false;
+        console.error(`Welcome email failed for ${user.email}: ${emailError.message}`);
+      }
 
       res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id)
+        token: generateToken(user._id),
+        emailSent,
+        message: emailSent
+          ? 'Registration successful. Welcome email sent.'
+          : 'Registration successful, but the welcome email could not be sent.'
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
