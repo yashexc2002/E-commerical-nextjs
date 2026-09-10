@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
 const generateToken = (id) => {
@@ -82,6 +83,66 @@ const loginUser = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+    const user = await User.findOne({ email });
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+      await sendEmail({
+        email: user.email,
+        subject: 'Shopvilla - Reset Your Password',
+        message: `
+          <h2>Password reset request</h2>
+          <p>Hello ${user.name},</p>
+          <p>Click the link below to create a new password. This link expires in 15 minutes.</p>
+          <p><a href="${resetUrl}">Reset your password</a></p>
+          <p>If you did not request this, you can safely ignore this email.</p>
+        `
+      });
+    }
+
+    res.json({ message: 'If an account exists for that email, a password reset link has been sent.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password || password.length < 6) {
+      return res.status(400).json({ message: 'A reset token and password of at least 6 characters are required.' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'This password reset link is invalid or has expired.' });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully. You can now log in.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getUsers = async (req, res) => {
   try {
     const users = await User.find({}).select('-password');
@@ -91,4 +152,4 @@ const getUsers = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUsers };
+module.exports = { registerUser, loginUser, forgotPassword, resetPassword, getUsers };
