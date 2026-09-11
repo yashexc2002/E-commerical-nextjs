@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import '../styles/auth.css';
 
 const ResetPassword = () => {
   const { token } = useParams();

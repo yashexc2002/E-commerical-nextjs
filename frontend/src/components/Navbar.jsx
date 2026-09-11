@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useSelector } from 'react-redux';
-import '../styles/navbar.css';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -39,4 +38,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

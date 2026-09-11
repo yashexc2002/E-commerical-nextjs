@@ -99,6 +99,7 @@ const forgotPassword = async (req, res) => {
       await sendEmail({
         email: user.email,
         subject: 'Shopvilla - Reset Your Password',
+        text: `Hello ${user.name}, reset your Shopvilla password here: ${resetUrl}. This link expires in 15 minutes.`,
         message: `
           <h2>Password reset request</h2>
           <p>Hello ${user.name},</p>

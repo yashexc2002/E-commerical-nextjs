@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async ({ email, subject, message }) => {
+const sendEmail = async ({ email, subject, message, text }) => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
     throw new Error('Email service is not configured. Set GMAIL_USER and GMAIL_PASS in backend/.env.');
   }
@@ -19,6 +19,8 @@ const sendEmail = async ({ email, subject, message }) => {
     to: email,
     subject,
     html: message,
+    text: text || message.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+    replyTo: process.env.GMAIL_USER,
   };
 
   await transporter.sendMail(mailOptions);
